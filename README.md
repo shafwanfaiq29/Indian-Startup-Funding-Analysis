@@ -128,6 +128,8 @@ The analysis also shows that outliers play a major role in shaping total funding
 - `summary_metrics.csv` — summary metrics from the analysis
 - `main_findings.csv` — key findings table
 
+## Dashboard 
+
 ## Author
 
 Muh. Shafwan Faiq R.
