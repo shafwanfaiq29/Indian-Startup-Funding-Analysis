@@ -1,0 +1,13 @@
+metrik,nilai
+Jumlah seluruh data,3044
+Jumlah startup unik,2443
+Jumlah data dengan amount valid,2073
+Jumlah data tanpa outlier,1788
+Jumlah data outlier,285
+Persentase data amount valid,68.10%
+Tanggal awal,2015-01-02 00:00:00
+Tanggal akhir,2020-01-13 00:00:00
+Total funding,"38,143.91 juta USD"
+Rata-rata funding,18.40 juta USD
+Median funding,1.75 juta USD
+Funding terbesar,"3,900.00 juta USD"
