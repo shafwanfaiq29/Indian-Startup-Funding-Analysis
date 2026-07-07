@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian Startup Funding Analysis Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --white: #ffffff;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --accent-3: #f59e0b;
+      --danger: #fb7185;
+      --border: rgba(255,255,255,0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 35%), linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 28px 20px 72px; }
+    .hero {
+      padding: 48px 0 26px;
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+    .hero-card, .panel, .metric, .insight {
+      border: 1px solid var(--border);
+      background: rgba(17,24,39,.74);
+      backdrop-filter: blur(12px);
+      border-radius: 22px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+    }
+    .hero-card { padding: 34px; }
+    .eyebrow {
+      display: inline-flex; gap: 8px; align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(56,189,248,.12);
+      color: #bae6fd;
+      font-size: 13px;
+      border: 1px solid rgba(56,189,248,.25);
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 14px; font-size: clamp(32px, 5vw, 56px); line-height: 1.05; letter-spacing: -0.045em; }
+    h2 { margin: 0 0 14px; font-size: 26px; letter-spacing: -0.025em; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { color: var(--muted); margin: 0; }
+    .side-card { padding: 24px; display:flex; flex-direction:column; justify-content:space-between; }
+    .side-card .big { font-size: 42px; line-height: 1; color: var(--white); font-weight: 800; letter-spacing: -0.04em; }
+    .side-card .label { color: var(--muted); margin-top: 8px; }
+    .metrics { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 16px 0 28px; }
+    .metric { padding: 18px; }
+    .metric .value { font-size: 26px; font-weight: 800; letter-spacing:-0.03em; color: var(--white); }
+    .metric .name { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+    .panel { padding: 22px; min-height: 390px; }
+    .panel.tall { min-height: 470px; }
+    .panel.full { grid-column: 1 / -1; }
+    .chart-wrap { position:relative; height: 310px; margin-top: 12px; }
+    .chart-wrap.short { height: 270px; }
+    .section { margin-top: 34px; }
+    .section-head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 12px; }
+    .section-head p { max-width: 740px; }
+    .insights-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+    .insight { padding: 18px; }
+    .insight strong { color: var(--white); }
+    .tag {
+      display:inline-flex; padding: 3px 9px; border-radius:999px;
+      font-size:12px; color:#dbeafe; background:rgba(59,130,246,.14); border: 1px solid rgba(59,130,246,.24);
+      margin-bottom: 10px;
+    }
+    table { width:100%; border-collapse: collapse; margin-top: 14px; overflow: hidden; border-radius: 14px; }
+    th, td { padding: 12px 10px; text-align:left; border-bottom:1px solid var(--border); font-size: 14px; }
+    th { color: #cbd5e1; background: rgba(255,255,255,.04); font-weight: 700; }
+    td { color: var(--muted); }
+    .note {
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: rgba(245,158,11,.10);
+      border: 1px solid rgba(245,158,11,.25);
+      color: #fde68a;
+      margin-top: 14px;
+    }
+    .footer { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--muted); display:flex; justify-content:space-between; gap: 12px; flex-wrap: wrap; }
+    @media (max-width: 900px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .insights-grid { grid-template-columns: 1fr; }
+      .panel { min-height: auto; }
+    }
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: 1fr; }
+      .hero-card { padding: 24px; }
+      .container { padding: 18px 14px 56px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Dashboard · Exploratory Data Analysis</div>
+        <h1>Indian Startup Funding Analysis</h1>
+        <p>This dashboard summarizes funding patterns in the Indian startup ecosystem from 2015 to early 2020. It highlights funding trends, startup hubs, leading industries, investor activity, repeated funding, and the impact of outliers.</p>
+      </div>
+      <div class="side-card">
+        <div>
+          <div class="tag">Main takeaway</div>
+          <div class="big">85.12%</div>
+          <div class="label">of total funding is contributed by outlier deals.</div>
+        </div>
+        <p style="margin-top:24px;">This means total funding insights should be interpreted together with deal frequency and median funding.</p>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric"><div class="value">3,044</div><div class="name">Funding Records</div></div>
+      <div class="metric"><div class="value">2,443</div><div class="name">Unique Startups</div></div>
+      <div class="metric"><div class="value">$38.14B</div><div class="name">Total Funding</div></div>
+      <div class="metric"><div class="value">2015–2020</div><div class="name">Data Period</div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Executive Insights</h2><p>Key findings generated from the data cleaning and EDA process.</p></div>
+      </div>
+      <div class="insights-grid">
+        <div class="insight"><span class="tag">City</span><p><strong>Bengaluru</strong> dominates both funding count and total funding, making it the main startup funding hub.</p></div>
+        <div class="insight"><span class="tag">Industry</span><p><strong>E-commerce</strong> leads by both deal frequency and total funding amount.</p></div>
+        <div class="insight"><span class="tag">Investment Type</span><p><strong>Seed Funding</strong> appears most often, while <strong>Private Equity</strong> contributes the largest total funding.</p></div>
+        <div class="insight"><span class="tag">Investor</span><p><strong>Sequoia Capital</strong> is the most active investor by frequency, while <strong>SoftBank</strong> is associated with the highest total deal value.</p></div>
+        <div class="insight"><span class="tag">Startup</span><p><strong>Ola</strong> has the most repeated funding rounds, while <strong>Flipkart</strong> has the largest total funding among repeat-funded startups.</p></div>
+        <div class="insight"><span class="tag">Outlier</span><p>A small number of large funding deals contribute <strong>85.12%</strong> of total funding.</p></div>
+      </div>
+    </section>
+
+    <section class="section grid">
+      <div class="panel"><h3>Funding Trend by Year</h3><p>2016 has the most deals, while 2017 has the highest total funding.</p><div class="chart-wrap"><canvas id="yearChart"></canvas></div></div>
+      <div class="panel"><h3>Funding by Month</h3><p>June has the most funding deals, while August has the highest total funding.</p><div class="chart-wrap"><canvas id="monthChart"></canvas></div></div>
+      <div class="panel"><h3>Top Cities by Total Funding</h3><p>Bengaluru is far ahead of other startup hubs.</p><div class="chart-wrap"><canvas id="cityChart"></canvas></div></div>
+      <div class="panel"><h3>Top Industries by Total Funding</h3><p>E-commerce dominates total funding, followed by Logistics/Transportation and FinTech/Finance.</p><div class="chart-wrap"><canvas id="industryChart"></canvas></div></div>
+      <div class="panel"><h3>Investment Types</h3><p>Seed Funding is most frequent, but Private Equity dominates funding value.</p><div class="chart-wrap"><canvas id="investmentChart"></canvas></div></div>
+      <div class="panel"><h3>Investor Activity</h3><p>Sequoia Capital is the most active investor by frequency.</p><div class="chart-wrap"><canvas id="investorChart"></canvas></div></div>
+      <div class="panel"><h3>Repeat-Funded Startups</h3><p>Ola received the highest number of funding rounds.</p><div class="chart-wrap"><canvas id="repeatChart"></canvas></div></div>
+      <div class="panel"><h3>Top City-Industry Combinations</h3><p>Bengaluru - E-commerce has the highest total funding.</p><div class="chart-wrap"><canvas id="comboChart"></canvas></div></div>
+    </section>
+
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Analysis Questions & Conclusions</h2>
+          <p>The analysis was refined to match the dataset structure. Since the data contains startup funding records, the focus is on funding trends, city hubs, industry preferences, investors, investment types, repeated funding, and outlier impact.</p>
+        </div>
+      </div>
+      <div class="insights-grid">
+        <div class="insight">
+          <span class="tag">Time Trend</span>
+          <h3>How did funding change over time?</h3>
+          <p><strong>2016</strong> recorded the highest number of funding deals, while <strong>2017</strong> recorded the highest total funding. This shows that deal frequency and funding value do not always move in the same direction.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Startup Hub</span>
+          <h3>Do cities play a major role?</h3>
+          <p>Yes. <strong>Bengaluru</strong> is the strongest funding hub, leading both the number of funding deals and total funding amount. Mumbai, Gurugram, and New Delhi are also important hubs.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Industry</span>
+          <h3>Which industries are favored?</h3>
+          <p><strong>E-commerce</strong> is the most dominant industry by both deal count and total funding. Logistics/Transportation also received very large funding values due to major high-value deals.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Investment Type</span>
+          <h3>Which investment type dominates?</h3>
+          <p><strong>Seed Funding</strong> appears most frequently, indicating many early-stage startup deals. However, <strong>Private Equity</strong> contributes the largest total funding amount.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Investor</span>
+          <h3>Who are the key investors?</h3>
+          <p><strong>Sequoia Capital</strong> is the most active investor by frequency. <strong>SoftBank</strong> is associated with the highest total funding value, showing its involvement in larger deals.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Repeat Funding</span>
+          <h3>Which startups received repeated funding?</h3>
+          <p><strong>Ola</strong> received the highest number of funding rounds, while <strong>Flipkart</strong> received the largest total funding among repeat-funded startups.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Funding Size</span>
+          <h3>How much funding do startups generally receive?</h3>
+          <p>The median funding is only <strong>USD 1.75 million</strong>, while the average is <strong>USD 18.40 million</strong>. This gap indicates a highly skewed distribution caused by large funding deals.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Outlier</span>
+          <h3>How strong is the outlier impact?</h3>
+          <p>Outliers contribute around <strong>85.12%</strong> of total funding. Therefore, total funding insights should be interpreted carefully and compared with deal count and median funding.</p>
+        </div>
+        <div class="insight">
+          <span class="tag">Business Insight</span>
+          <h3>What is the main business takeaway?</h3>
+          <p>The Indian startup funding ecosystem is concentrated around <strong>Bengaluru, E-commerce, Private Equity, and a small number of mega-deals</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="panel">
+        <h2>Final Conclusion</h2>
+        <p>The analysis shows that the Indian startup funding ecosystem is not only shaped by the number of funding deals, but also by a small number of very large investments. Bengaluru stands out as the main startup funding hub, while E-commerce leads as the most dominant industry. Seed Funding is the most common investment type, but most of the funding value is concentrated in Private Equity and later-stage funding rounds.</p>
+        <p style="margin-top:12px;">From an investor perspective, Sequoia Capital appears as the most active investor by frequency, while SoftBank is more strongly associated with high-value funding deals. From a startup perspective, Ola shows strong repeat funding activity, while Flipkart stands out as the repeat-funded startup with the largest total funding.</p>
+        <p style="margin-top:12px;">Overall, this project highlights the importance of comparing multiple perspectives in funding analysis: deal count, total funding, median funding, investor activity, industry category, city hub, and outlier impact. Relying only on total funding can be misleading because outliers contribute more than 85% of the total funding value.</p>
+        <div class="note">Main conclusion: Bengaluru and E-commerce dominate the ecosystem, but the overall funding landscape is heavily influenced by large Private Equity deals and high-value outliers.</div>
+      </div>
+    </section>
+
+    <section class="section grid">
+      <div class="panel full"><h3>Largest Funding Deals</h3><p>These deals strongly influence total funding patterns.</p><div class="chart-wrap short"><canvas id="dealChart"></canvas></div></div>
+      <div class="panel"><h3>Summary of Main Findings</h3><div style="overflow-x:auto;"><table id="findingsTable"></table></div></div>
+      <div class="panel"><h3>Top Funding Deals Table</h3><div style="overflow-x:auto;"><table id="dealsTable"></table></div></div>
+    </section>
+
+    <section class="section">
+      <div class="panel">
+        <h2>Limitations</h2>
+        <p>This dashboard is based on cleaned startup funding records. Several values were missing, especially funding amounts. Investor funding value represents the total value of deals involving that investor, not the exact contribution from each investor. Total funding analysis is heavily affected by outliers, and 2020 only contains data up to January.</p>
+        <div class="note">Recommended reading: use both frequency-based and amount-based insights. Frequency shows ecosystem activity, while total amount shows capital concentration.</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Created by Muh. Shafwan Faiq R.</span>
+      <span>Python · Pandas · NumPy · Matplotlib · EDA · Data Visualization</span>
+    </footer>
+  </main>
+  <script>
+    const DATA = {"yearly": {"labels": ["2015", "2016", "2017", "2018", "2019", "2020"], "jumlah": [936.0, 993.0, 687.0, 310.0, 111.0, 7.0], "total": [8673.02, 3828.09, 10429.31, 5122.37, 9700.92, 390.21], "median": [1.5, 1.0, 2.25, 4.0, 12.0, 9.0]}, "monthly": {"labels": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], "jumlah": [276.0, 248.0, 251.0, 262.0, 240.0, 296.0, 254.0, 272.0, 241.0, 236.0, 247.0, 221.0], "total": [2197.87, 2458.55, 3329.12, 2295.55, 2967.55, 1770.11, 2862.93, 9687.17, 3352.27, 1575.68, 4334.99, 1312.13]}, "city": {"labels": ["Bengaluru", "Mumbai", "Gurugram", "New Delhi", "Noida", "Chennai", "Pune", "Menlo Park", "Hyderabad", "India"], "total": [18797.708863, 4939.225015, 3872.42865754, 3358.571515, 1263.164, 718.767, 717.582, 450.0, 401.67623000000003, 349.5], "jumlah": [850.0, 572.0, 338.0, 459.0, 93.0, 98.0, 112.0, 1.0, 100.0, 5.0]}, "cityCount": {"labels": ["Bengaluru", "Mumbai", "New Delhi", "Gurugram", "Pune", "Hyderabad", "Chennai", "Noida", "Ahmedabad", "Jaipur"], "jumlah": [850.0, 572.0, 459.0, 338.0, 112.0, 100.0, 98.0, 93.0, 40.0, 30.0], "total": [18797.708863, 4939.225015, 3358.571515, 3872.42865754, 717.582, 401.67623000000003, 718.767, 1263.164, 119.980811, 152.735]}, "industry": {"labels": ["E-commerce", "Logistics/Transportation", "FinTech/Finance", "Technology/SaaS", "Consumer Internet", "Others", "Healthcare/HealthTech", "EdTech/Education", "Food & Beverage", "Travel/Hospitality"], "total": [13166.28869254, 7146.117624, 4921.110265, 2936.1891, 2498.19892, 2013.75663468, 1870.469, 1010.204065, 972.6691950000001, 256.45], "jumlah": [579.0, 163.0, 263.0, 468.0, 524.0, 269.0, 256.0, 160.0, 134.0, 24.0], "median": [3.0, 4.5, 5.0, 1.8, 1.0, 1.0, 1.1, 1.0, 2.0, 2.2]}, "industryCount": {"labels": ["E-commerce", "Consumer Internet", "Technology/SaaS", "Others", "FinTech/Finance", "Healthcare/HealthTech", "Logistics/Transportation", "EdTech/Education", "Food & Beverage", "Real Estate"], "jumlah": [579.0, 524.0, 468.0, 269.0, 263.0, 256.0, 163.0, 160.0, 134.0, 33.0], "total": [13166.28869254, 2498.19892, 2936.1891, 2013.75663468, 4921.110265, 1870.469, 7146.117624, 1010.204065, 972.6691950000001, 120.64999999999999]}, "investment": {"labels": ["Private Equity", "Series B", "Series D", "Series C", "Other Funding Round", "Seed Funding", "Series G", "Series A", "Debt Funding", "Venture Round"], "total": [27397.248165, 4805.195735, 1481.799, 1044.718394, 1006.943495, 930.432108, 231.0, 203.2, 191.423174, 160.8686], "jumlah": [1367.0, 21.0, 12.0, 14.0, 4.0, 1401.0, 1.0, 24.0, 30.0, 5.0], "median": [6.0, 15.8, 65.0, 50.0, 4.5, 0.33, 231.0, 4.25, 5.0, 10.0]}, "investmentCount": {"labels": ["Seed Funding", "Private Equity", "Seed/Angel Funding", "Debt Funding", "Series A", "Series B", "Series C", "Series D", "Pre-Series A", "Venture Round"], "jumlah": [1401.0, 1367.0, 138.0, 30.0, 24.0, 21.0, 14.0, 12.0, 9.0, 5.0], "total": [930.432108, 27397.248165, 125.38481, 191.423174, 203.2, 4805.195735, 1044.718394, 1481.799, 44.372, 160.8686]}, "investorCount": {"labels": ["Sequoia Capital", "Accel Partners", "Kalaari Capital", "Tiger Global", "SAIF Partners", "Blume Ventures", "IDG Ventures", "Indian Angel Network", "Nexus Venture Partners", "Ratan Tata"], "jumlah": [112.0, 74.0, 51.0, 48.0, 47.0, 47.0, 46.0, 43.0, 31.0, 31.0], "total": [2997.06886, 1165.68, 620.37, 2836.8, 596.55, 172.762, 369.25, 20.332, 471.2302, 70.735]}, "investorAmount": {"labels": ["SoftBank", "WestBridge Capital", "Sequoia Capital", "Tiger Global", "Tencent Holdings", "DST Global", "Microsoft", "eBay", "Accel Partners", "Vijay Shekhar Sharma"], "total": [7075.0, 3992.0, 2997.06886, 2836.8, 1610.0, 1492.0, 1400.0, 1400.0, 1165.68, 1005.4], "jumlah": [20.0, 3.0, 112.0, 48.0, 3.0, 4.0, 1.0, 1.0, 74.0, 12.0]}, "repeat": {"labels": ["Ola", "OYO Rooms", "Paytm", "Swiggy", "BYJU'S", "Lenskart", "Meesho", "Nykaa", "NoBroker", "UrbanClap"], "jumlah": [13.0, 9.0, 8.0, 8.0, 7.0, 6.0, 6.0, 6.0, 6.0, 6.0], "total": [2054.2, 997.0, 3348.95, 270.5, 525.0, 65.65, 189.6, 214.0, 71.4, 60.7]}, "repeatAmount": {"labels": ["Flipkart", "Paytm", "Ola", "OYO Rooms", "Udaan", "Snapdeal", "BYJU'S", "BigBasket", "GOQii", "Zomato"], "total": [4759.7, 3348.95, 2054.2, 997.0, 870.0, 700.0, 525.0, 512.0, 450.0, 435.0], "jumlah": [6.0, 8.0, 13.0, 9.0, 4.0, 2.0, 7.0, 5.0, 3.0, 4.0]}, "combo": {"labels": ["Bengaluru - E-commerce", "Bengaluru - Logistics/Transportation", "New Delhi - E-commerce", "Mumbai - FinTech/Finance", "Gurugram - E-commerce", "Noida - FinTech/Finance", "Bengaluru - Others", "Mumbai - Consumer Internet", "Mumbai - E-commerce", "Mumbai - Technology/SaaS"], "total": [8323.350468, 6392.562, 1940.695, 1832.847, 1318.19006454, 1037.968, 1016.2086, 737.076, 713.053495, 675.0645], "jumlah": [152.0, 61.0, 118.0, 74.0, 90.0, 11.0, 74.0, 118.0, 104.0, 81.0]}, "topDeals": {"labels": ["Rapido Bike Taxi (2019)", "Flipkart (2017)", "Paytm (2017)", "Flipkart (2017)", "Paytm (2019)", "Flipkart (2015)", "Paytm (2015)", "True North (2018)", "Udaan (2019)", "Ola (2015)"], "amount_million_usd": [3900.0, 2500.0, 1400.0, 1400.0, 1000.0, 700.0, 680.0, 600.0, 585.0, 500.0]}};
+    const TABLES = {"deals": [["2019-08-27", "Rapido Bike Taxi", "Bengaluru", "Logistics/Transportation", "Series B", "3,900.00"], ["2017-08-11", "Flipkart", "Bengaluru", "E-commerce", "Private Equity", "2,500.00"], ["2017-05-18", "Paytm", "Bengaluru", "E-commerce", "Private Equity", "1,400.00"], ["2017-03-21", "Flipkart", "Bengaluru", "E-commerce", "Private Equity", "1,400.00"], ["2019-11-25", "Paytm", "Noida", "FinTech/Finance", "Other Funding Round", "1,000.00"], ["2015-07-28", "Flipkart", "Bengaluru", "E-commerce", "Private Equity", "700.00"], ["2015-09-29", "Paytm", "New Delhi", "E-commerce", "Private Equity", "680.00"], ["2018-08-30", "True North", "Mumbai", "FinTech/Finance", "Private Equity", "600.00"], ["2019-10-02", "Udaan", "Bengaluru", "Others", "Series D", "585.00"], ["2015-11-18", "Ola", "Bengaluru", "E-commerce", "Private Equity", "500.00"]], "findings": [["Year with most funding deals", "2016"], ["Year with highest total funding", "2017"], ["Month with most funding deals", "June"], ["Month with highest total funding", "August"], ["Top city by deals and total funding", "Bengaluru"], ["Top industry by deals and total funding", "E-commerce"], ["Most frequent investment type", "Seed Funding"], ["Highest total funding investment type", "Private Equity"], ["Most active investor", "Sequoia Capital"], ["Investor with highest associated deal value", "SoftBank"], ["Most repeat-funded startup", "Ola"], ["Highest total funding among repeat-funded startups", "Flipkart"], ["Outlier contribution", "85.12%"]]};
+    const palette = ['#38bdf8','#22c55e','#f59e0b','#fb7185','#a78bfa','#2dd4bf','#f97316','#e879f9','#60a5fa','#84cc16'];
+    Chart.defaults.color = '#cbd5e1';
+    Chart.defaults.borderColor = 'rgba(255,255,255,.10)';
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+    function chartBar(ctx, labels, datasets, stacked=false) {
+      return new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { boxWidth: 12 } } },
+          scales: {
+            x: { stacked, ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+            y: { stacked, beginAtZero: true }
+          }
+        }
+      });
+    }
+    function chartLine(ctx, labels, datasets) {
+      return new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          tension: .3,
+          plugins: { legend: { labels: { boxWidth: 12 } } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+    function money(v) { return Number(v).toLocaleString(undefined, {maximumFractionDigits: 2}); }
+
+    chartBar(document.getElementById('yearChart'), DATA.yearly.labels, [
+      { label:'Funding Deals', data: DATA.yearly.jumlah, backgroundColor:'rgba(56,189,248,.65)', yAxisID:'y' },
+      { label:'Total Funding, USD Mn', data: DATA.yearly.total, backgroundColor:'rgba(34,197,94,.65)', yAxisID:'y1' }
+    ]);
+    chartLine(document.getElementById('monthChart'), DATA.monthly.labels, [
+      { label:'Funding Deals', data: DATA.monthly.jumlah, borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,.16)' },
+      { label:'Total Funding, USD Mn', data: DATA.monthly.total, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.16)' }
+    ]);
+    chartBar(document.getElementById('cityChart'), DATA.city.labels, [{ label:'Total Funding, USD Mn', data: DATA.city.total, backgroundColor: palette }]);
+    chartBar(document.getElementById('industryChart'), DATA.industry.labels, [{ label:'Total Funding, USD Mn', data: DATA.industry.total, backgroundColor: palette }]);
+    chartBar(document.getElementById('investmentChart'), DATA.investment.labels, [{ label:'Total Funding, USD Mn', data: DATA.investment.total, backgroundColor: palette }]);
+    chartBar(document.getElementById('investorChart'), DATA.investorCount.labels, [{ label:'Investment Count', data: DATA.investorCount.jumlah, backgroundColor: palette }]);
+    chartBar(document.getElementById('repeatChart'), DATA.repeat.labels, [{ label:'Funding Rounds', data: DATA.repeat.jumlah, backgroundColor: palette }]);
+    chartBar(document.getElementById('comboChart'), DATA.combo.labels, [{ label:'Total Funding, USD Mn', data: DATA.combo.total, backgroundColor: palette }]);
+    chartBar(document.getElementById('dealChart'), DATA.topDeals.labels, [{ label:'Amount, USD Mn', data: DATA.topDeals.amount_million_usd, backgroundColor: palette }]);
+
+    function renderTable(id, headers, rows) {
+      const table = document.getElementById(id);
+      table.innerHTML = `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    }
+    renderTable('findingsTable', ['Aspect','Result'], TABLES.findings);
+    renderTable('dealsTable', ['Date','Startup','City','Industry','Investment Type','Amount, USD Mn'], TABLES.deals);
+  </script>
+</body>
+</html>
